@@ -19,7 +19,8 @@ class TestConnections(unittest.TestCase):
     def test_connect_to_api(self):
         """Test API connectivity."""
         # make sure a 200 is returned.
-        self.assertEqual(Enlightener.connect_to_api(devicelist, True).status_code, 200)
+        self.assertEqual(
+            Enlightener.connect_to_api(devicelist, True).status_code, 200)
 
 if __name__ == '__main__':
     unittest.main()

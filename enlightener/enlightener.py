@@ -6,7 +6,7 @@ Run this as follows:
 import requests
 
 from requests.auth import HTTPBasicAuth
-from settings import *
+from settings import USERNAME, PASSWORD, BASE_URL, RESOURCES
 
 username = USERNAME
 password = PASSWORD
