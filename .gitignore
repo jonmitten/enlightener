@@ -108,3 +108,5 @@ venv.bak/
 
 # Settings are unique to a use-case, and must be created externally
 settings.py
+*secret*
+*credentials*
