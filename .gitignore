@@ -102,3 +102,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# Workspace files are user-specific
+*.sublime-workspace
+
+# Settings are unique to a use-case, and must be created externally
+settings.py
