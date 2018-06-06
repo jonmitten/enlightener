@@ -115,7 +115,12 @@ def get_pretty_time(minutes):
 
 
 def update_device_light_thresholds(test=False):
-    # get PT unit ID, Desired Light Sensor Value, and current light sensor value
+    """
+    Get PT unit ID.
+
+    Desired Light Sensor Value,
+    and current light sensor value.
+    """
     sheet = 'Sheet1!'
     data = input_from_sheets("{}A2:B100".format(sheet))
     i = 2
@@ -162,20 +167,20 @@ def update_device_light_thresholds(test=False):
         now = datetime.datetime.utcnow()
         now = now.strftime("%Y-%m-%d %H:%M:%S")
         cell = 'E{}'.format(str(i))
-        if not analysis:
-            # if different, update to desired light value
-            if diff_minutes > 61:
-                update_sheet_status(
-                    check_battery={'value': 'CHECK BATTERY', 'cell': cell})
-            else:
+        # if different, update to desired light value
+        if diff_minutes > 32:
+            update_sheet_status(
+                check_battery={'value': 'CHECK BATTERY', 'cell': cell})
+        else:
+            if not analysis:
                 update_light_value(device_id, dt_value)
                 update_sheet_status(
                     light_update={'value': 'attempted {}'.format(now),
                                   'cell': cell})
-        else:
-            update_sheet_status(light_update={
-                'value': 'verified {}'.format(now),
-                'cell': cell})
+            else:
+                update_sheet_status(light_update={
+                    'value': 'verified {}'.format(now),
+                    'cell': cell})
         # finally, update the increment var
         time.sleep(math.floor(100 / 24))
         i += 1
