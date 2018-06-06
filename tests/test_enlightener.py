@@ -7,7 +7,7 @@ sys.path.append('../enlightener')
 from enlightener import analyze_time_diff
 from enlightener import compile_light_time
 from enlightener import get_device_list, get_light_threshold, get_time_diff
-from enlightener import get_device_ids, process_device_ids
+from enlightener import get_device_ids, process_device_ids, update_device_light_thresholds
 
 
 class TestConnector(unittest.TestCase):
@@ -68,19 +68,22 @@ class TestConnector(unittest.TestCase):
 
     def test_get_device_ids(self):
         values = get_device_ids()
-        self.assertIn('99000512002128', values)
         self.assertIn('99000512000619', values)
 
-    def test_process_device_ids(self):
-        """Test the process runner."""
-        process = process_device_ids()
-        print('\n')
-        print(process)
-        print('\n')
-        reprocess = process_device_ids(True)
-        print('\n')
-        print(reprocess)
-        print('\n')
+    # def test_process_device_ids(self):
+    #     """Test the process runner."""
+    #     process = process_device_ids()
+    #     print('\n')
+    #     print(process)
+    #     print('\n')
+    #     reprocess = process_device_ids()
+    #     print('\n')
+    #     print(reprocess)
+    #     print('\n')
+
+    def test_update_device_light_thresholds(self):
+        data = update_device_light_thresholds(True)
+
 
 if __name__ == '__main__':
     unittest.main()

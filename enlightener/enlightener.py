@@ -5,12 +5,16 @@ Run this as follows:
 """
 import datetime
 import logging
+import math
+import time
 
+from collections import deque
 from connections import (get_config_for_device,
                          get_device_list,
                          get_status_for_device,
                          update_light_value)
-from google_sheets import input_from_sheets
+from google_sheets import (input_from_sheets,
+                           write_to_cell)
 
 logger = logging.getLogger('ENLIGHTENER')
 
@@ -21,18 +25,9 @@ def analyze_thresholds(values):
     Take in values, parse rows, compare desired thresholds,
     act accordingly.
     """
-
-    for row in values:
-        device_id = row[0]
-        desired_threshold = row[1]
-
-        current_threshold = get_light_threshold(values)
-
-        # if row[1] is current_threshold:
-        #     now = datetime.datetime.now()
-        #     update_row(device_id, row[1], light_threshold, now, now)
-        # else:
-        #     update_row(device_id)
+    if values['desired'] == values['current']:
+        return True
+    return False
 
 
 def get_timestamp(req):
@@ -41,11 +36,14 @@ def get_timestamp(req):
 
     return timestamp
 
+
 def chop_microseconds(delta):
+    """Make deltas without microseconds."""
     return delta - datetime.timedelta(microseconds=delta.microseconds)
 
-def get_time_diff(timestamp, now):
 
+def get_time_diff(timestamp, now):
+    """Get time delta between two times."""
     now = datetime.datetime.strptime(str(now), '%Y-%m-%d %H:%M:%S')
     status_time = datetime.datetime.strptime(
         timestamp, '%Y-%m-%d %H:%M:%S')
@@ -89,6 +87,7 @@ def compile_light_time(device_id):
     # )
 
     return({
+        'now': str(now),
         'time': timestamp,
         'light': light,
         'time difference': time_diff,
@@ -98,13 +97,97 @@ def compile_light_time(device_id):
 
 def get_device_ids():
     """Get each device from the designated spreadsheet."""
-    values = input_from_sheets()
+    values = input_from_sheets("Sheet1!A1:B2")
     device_ids = []
     del values[0]
     for x in values:
         device_id = x[0]
         device_ids.append(device_id)
     return device_ids
+
+
+def get_pretty_time(minutes):
+    """Return a pretty time."""
+    sec = datetime.timedelta(seconds=int(minutes * 60))
+    d = datetime.datetime(1, 1, 1) + sec
+
+    return ("%d:%d:%d" % (d.day - 1, d.hour, d.minute))
+
+
+def update_device_light_thresholds(test=False):
+    # get PT unit ID, Desired Light Sensor Value, and current light sensor value
+    sheet = 'Sheet1!'
+    data = input_from_sheets("{}A2:B100".format(sheet))
+    i = 2
+    light_status = {}
+    now_status = {}
+    report_status = {}
+    diff_status = {}
+    for row in data:
+        device_id = row[0]
+        # set up the write range for updating sheet
+        light_time = compile_light_time(device_id)
+        # fetch the current light sensor value and timestamp
+        light_status['value'] = light_time.get('light')
+        light_status['cell'] = "C{}".format(str(i))
+
+        now_status['value'] = light_time.get('now')
+        now_status['cell'] = "D{}".format(str(i))
+
+        report_status['value'] = light_time.get('time')
+        report_status['cell'] = "F{}".format(str(i))
+
+        diff_minutes = light_time.get('time difference')
+        pretty_time = get_pretty_time(diff_minutes)
+
+        diff_status['value'] = "{}".format(pretty_time)
+        diff_status['cell'] = "G{}".format(str(i))
+
+        update_sheet_status(
+            light_status=light_status,
+            now_status=now_status,
+            report_status=report_status,
+            diff_status=diff_status
+        )
+        time.sleep(math.floor(100 / 24))
+        # compare current light value with desired light value
+        dt = deque(input_from_sheets("B{}".format(str(i))))
+        dt_value = dt[0][0]
+        print(dt, dt_value)
+        analysis = analyze_thresholds({'desired': int(dt_value),
+                                       'current': int(light_status['value'])})
+        print('device_id: {}, analysis: {}'.format(device_id, analysis))
+
+        # get a timestamp
+        now = datetime.datetime.utcnow()
+        now = now.strftime("%Y-%m-%d %H:%M:%S")
+        cell = 'E{}'.format(str(i))
+        if not analysis:
+            # if different, update to desired light value
+            if diff_minutes > 61:
+                update_sheet_status(
+                    check_battery={'value': 'CHECK BATTERY', 'cell': cell})
+            else:
+                update_light_value(device_id, dt_value)
+                update_sheet_status(
+                    light_update={'value': 'attempted {}'.format(now),
+                                  'cell': cell})
+        else:
+            update_sheet_status(light_update={
+                'value': 'verified {}'.format(now),
+                'cell': cell})
+        # finally, update the increment var
+        time.sleep(math.floor(100 / 24))
+        i += 1
+
+    return {'data': data, 'time': report_status['value']}
+
+
+def update_sheet_status(**kwargs):
+    """Bulk update statuses."""
+    for k, v in kwargs.items():
+        print('k: {}, v: {}'.format(k, v))
+        write_to_cell(v.get('value'), v.get('cell'))
 
 
 def process_device_ids(fix=False):

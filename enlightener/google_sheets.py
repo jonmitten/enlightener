@@ -3,14 +3,14 @@ Google Sheets Python API helper file.
 
 Sets up access to CONSTs and vars.
 """
+from pprint import pprint
 from settings import SPREADSHEET_ID
 
 from apiclient.discovery import build
 from httplib2 import Http
 from oauth2client import file, client, tools
-
 # set up the Sheets API
-SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly'
+SCOPES = 'https://www.googleapis.com/auth/spreadsheets'
 store = file.Storage('credentials.json')
 creds = store.get()
 if not creds or creds.invalid:
@@ -20,7 +20,7 @@ service = build('sheets', 'v4', http=creds.authorize(Http()))
 
 
 # call the spreadsheets API
-RANGE_NAME = 'Sheet1!A1:C100'
+RANGE_NAME = 'Sheet1!A1:E1000'
 
 
 def hello_sheets():
@@ -34,11 +34,47 @@ def hello_sheets():
     return values
 
 
-def input_from_sheets():
+def input_from_sheets(range_name=RANGE_NAME):
     """Read input from Google Sheet."""
     results = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,
-                                                  range=RANGE_NAME).execute()
+                                                  range=range_name).execute()
     values = results.get('values', [])
     if not values:
         print('No Data Found')
     return values
+
+
+def get_col_height(data):
+    """Get length of col height."""
+    pass
+
+
+def increase_cell_by_one(cell):
+    """Take cell's A1-notation and increment by one col."""
+    pass
+
+
+def decrease_cell_by_one(cell):
+    """Take cell's A1-notation and decrement by one col."""
+    pass
+
+
+def write_to_cell(data="Hello from Python!", cell="B6", sheet="Sheet1!"):
+    """Write a value to a specific cell using A1 notation."""
+
+    # How the input data should be interpreted.
+    value_input_option = 'USER_ENTERED'  # TODO: Update placeholder value.
+
+    range_ = "{}{}".format(sheet, cell)
+    value_range_body = {
+        "range": range_,
+        "values": [
+            [data]
+        ]
+    }
+
+    request = service.spreadsheets().values().update(spreadsheetId=SPREADSHEET_ID, range=range_, valueInputOption=value_input_option, body=value_range_body)
+    response = request.execute()
+
+    # TODO: Change code below to process the `response` dict:
+    pprint(response)
