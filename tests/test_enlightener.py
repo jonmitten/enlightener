@@ -1,16 +1,26 @@
 """Test Enlightener module."""
 
+import math
 import unittest
 import sys
+import time
+
 sys.path.append('../enlightener')
 
+from connections import (get_config_for_device,
+                         get_device_list,
+                         get_status_for_device,
+                         update_light_value)
 from enlightener import analyze_time_diff
 from enlightener import compile_light_time
-from enlightener import get_device_list, get_light_threshold, get_time_diff
-from enlightener import get_device_ids, process_device_ids, update_device_light_thresholds
+from enlightener import (get_light_threshold,
+                         get_time_diff)
+from enlightener import (get_device_ids,
+                         update_device_light_thresholds,
+                         get_current_light_reading)
 
 
-class TestConnector(unittest.TestCase):
+class TestEnlightener(unittest.TestCase):
     """Test connections."""
 
     def setUp(self):
@@ -66,9 +76,26 @@ class TestConnector(unittest.TestCase):
         self.assertGreaterEqual(diff3, 15)
         self.assertGreaterEqual(diff4, 20)
 
+    def test_get_light_threshold_set_get(self):
+        """Test threshold."""
+        device_id = self.device1
+        update_light_value(device_id, "1001")
+        time.sleep(math.floor(100 / 24))
+        req = get_config_for_device(device_id)
+        print(req)
+        threshold_value = get_light_threshold(req)
+        self.assertEqual(threshold_value, '1001')
+
     def test_get_device_ids(self):
         values = get_device_ids()
-        self.assertIn('99000512000619', values)
+        print(values)
+        test = False
+        if '99000512000647' in values:
+            test = True
+        elif '99000512000619' in values:
+            test = True
+
+        self.assertTrue(test)
 
     # def test_process_device_ids(self):
     #     """Test the process runner."""
@@ -83,7 +110,6 @@ class TestConnector(unittest.TestCase):
 
     def test_update_device_light_thresholds(self):
         data = update_device_light_thresholds(True)
-
 
 if __name__ == '__main__':
     unittest.main()

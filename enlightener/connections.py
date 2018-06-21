@@ -4,7 +4,9 @@ Connection manager.
 Manage connections to external API.
 """
 
+import math
 import requests
+import time
 
 from requests.auth import HTTPBasicAuth
 from settings import (USERNAME,
@@ -120,3 +122,13 @@ def update_light_value(device_id, threshold):
         return 'success'
     else:
         return 'put failed with error {}'.format(r.status_code)
+
+
+def locate_now(device_id):
+    """Perform location to refresh feed."""
+    print("locating {}".format(device_id))
+    url = "https://restapi.sendum.com/locatenow?deviceidentifier={}".format(
+        device_id)
+    r = requests.post(url, auth=basic_credentials)
+    print("find now for {} :::: status {}\n\n\n".format(
+        device_id, r.status_code))

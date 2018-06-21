@@ -5,6 +5,7 @@ sys.path.append('../enlightener')
 
 from connections import connect_to_api
 from google_sheets import hello_sheets, input_from_sheets, write_to_cell
+from settings import SHEET
 
 
 class TestConnector(unittest.TestCase):
@@ -24,8 +25,8 @@ class TestConnector(unittest.TestCase):
             response.status_code, 200)
 
     def test_write_to_cell(self):
-        write_to_cell("Hello, from test_connections!", "Sheet1", "E17")
-        test_ = input_from_sheets("Sheet1!E17")
+        write_to_cell("Hello, from test_connections!", SHEET, "E17")
+        test_ = input_from_sheets("{}!E17".format(SHEET))
         self.assertEqual(test_, [["Hello, from test_connections!"]])
 
 if __name__ == '__main__':

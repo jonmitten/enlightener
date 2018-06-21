@@ -4,7 +4,7 @@ Google Sheets Python API helper file.
 Sets up access to CONSTs and vars.
 """
 from pprint import pprint
-from settings import SPREADSHEET_ID
+from settings import SPREADSHEET_ID, SHEET, RANGE_NAME
 
 from apiclient.discovery import build
 from httplib2 import Http
@@ -20,7 +20,6 @@ service = build('sheets', 'v4', http=creds.authorize(Http()))
 
 
 # call the spreadsheets API
-RANGE_NAME = 'Sheet1!A1:E1000'
 
 
 def hello_sheets():
@@ -34,11 +33,15 @@ def hello_sheets():
     return values
 
 
-def input_from_sheets(range_name=RANGE_NAME):
+def input_from_sheets(range_name=RANGE_NAME, call_from="self"):
     """Read input from Google Sheet."""
+    print("ENTER: input_from_sheets({}) called from {}".format(
+        RANGE_NAME, call_from))
     results = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,
-                                                  range=range_name).execute()
+                                                  range=RANGE_NAME).execute()
+    print("results: {}".format(results))
     values = results.get('values', [])
+    print("values: {}".format(values))
     if not values:
         print('No Data Found')
     return values
@@ -59,13 +62,13 @@ def decrease_cell_by_one(cell):
     pass
 
 
-def write_to_cell(data="Hello from Python!", cell="B6", sheet="Sheet1!"):
+def write_to_cell(data="Hello from Python!", cell="B6"):
     """Write a value to a specific cell using A1 notation."""
 
     # How the input data should be interpreted.
     value_input_option = 'USER_ENTERED'  # TODO: Update placeholder value.
 
-    range_ = "{}{}".format(sheet, cell)
+    range_ = "{}!{}".format(SHEET, cell)
     value_range_body = {
         "range": range_,
         "values": [
@@ -73,7 +76,12 @@ def write_to_cell(data="Hello from Python!", cell="B6", sheet="Sheet1!"):
         ]
     }
 
-    request = service.spreadsheets().values().update(spreadsheetId=SPREADSHEET_ID, range=range_, valueInputOption=value_input_option, body=value_range_body)
+    request = service.spreadsheets().values().update(
+        spreadsheetId=SPREADSHEET_ID,
+        range=range_,
+        valueInputOption=value_input_option,
+        body=value_range_body)
+
     response = request.execute()
 
     # TODO: Change code below to process the `response` dict:
