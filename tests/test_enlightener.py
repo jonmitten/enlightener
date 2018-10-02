@@ -17,7 +17,9 @@ from enlightener import (get_light_threshold,
                          get_time_diff)
 from enlightener import (get_device_ids,
                          update_device_light_thresholds,
-                         get_current_light_reading)
+                         get_current_light_reading,
+                         report_light_threshold_values)
+from enlightener import read_write
 
 
 class TestEnlightener(unittest.TestCase):
@@ -109,7 +111,8 @@ class TestEnlightener(unittest.TestCase):
     #     print('\n')
 
     def test_update_device_light_thresholds(self):
-        data = update_device_light_thresholds(True)
+        # update_device_light_thresholds(True)
+        read_write("read")
 
 if __name__ == '__main__':
     unittest.main()

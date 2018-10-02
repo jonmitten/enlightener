@@ -47,6 +47,34 @@ def input_from_sheets(range_name=RANGE_NAME, call_from="self"):
     return values
 
 
+"""_cell methods map to static spreadsheet columns."""
+
+
+def light_threshold_status_cell(i):
+    """Make and return the light_threhosld_status_cell at column C."""
+    return "C{}".format(str(i))
+
+
+def time_checked_cell(i):
+    """Make and return the time_checked aka now_status cell at Column D."""
+    return "D{}".format(str(i))
+
+
+def last_updated_cell(i):
+    """Make and return the last_updated cell at Column E."""
+    return "E{}".format(str(i))
+
+
+def report_status_cell(i):
+    """Make and return the report_status cell at Column F."""
+    return "F{}".format(str(i))
+
+
+def time_since_last_report_cell(i):
+    """Make and return the Time Since Last Report cell at Column G."""
+    return "G{}".format(str(i))
+
+
 def get_col_height(data):
     """Get length of col height."""
     pass
@@ -62,9 +90,17 @@ def decrease_cell_by_one(cell):
     pass
 
 
+def update_sheet_status(**kwargs):
+    """Bulk update statuses."""
+    print("update_sheet_status kwargs: {}".format(kwargs))
+
+    for k, v in kwargs.items():
+        print('k: {}, v: {}'.format(k, v))
+        write_to_cell(v.get('value'), v.get('cell'))
+
+
 def write_to_cell(data="Hello from Python!", cell="B6"):
     """Write a value to a specific cell using A1 notation."""
-
     # How the input data should be interpreted.
     value_input_option = 'USER_ENTERED'  # TODO: Update placeholder value.
 
@@ -85,4 +121,4 @@ def write_to_cell(data="Hello from Python!", cell="B6"):
     response = request.execute()
 
     # TODO: Change code below to process the `response` dict:
-    pprint(response)
+    pprint("done writing to cell: {}".format(response))
