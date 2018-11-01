@@ -202,16 +202,18 @@ def report_light_threshold_values(init_data=""):
     .......................|.......
     Time Since Last Report:| G col
     """
+    i = ROW_ITER_START
     light_threshold_status = {}
     now_status = {}
     report_status = {}
     diff_status = {}
     data = {}
+
     if init_data is "":
         data = input_from_sheets(RANGE_NAME)
     else:
         data = init_data
-    i = ROW_ITER_START
+
     for row in data:
         device_id = row[0]
         time_diff = 0
@@ -231,7 +233,13 @@ def report_light_threshold_values(init_data=""):
         report_status['cell'] = report_status_cell(i)
 
         time_diff = round(get_time_diff(timestamp, _now))
-        pretty_time = get_pretty_time(time_diff)
+        if time_diff > 32:
+            check_battery = True
+        else:
+            check_battery = False
+
+        pretty_time = "CHECK BATTERY" if check_battery else get_pretty_time(
+            time_diff)
 
         diff_status['value'] = "{}".format(pretty_time)
         diff_status['cell'] = time_since_last_report_cell(i)
@@ -244,6 +252,7 @@ def report_light_threshold_values(init_data=""):
         )
         time.sleep(math.floor(100 / 24))
         i += 1
+    print("Finished running report of threshold values.")
 
 
 def report_light_readings():
@@ -262,15 +271,21 @@ def report_light_readings():
     for row in data:
 
         device_id = row[0]
-
         light_time = compile_light_time(device_id)
-        now_status['value'] = light_time.get('now')
+        now = light_time.get('now')
+        status_time = light_time.get('time')
+        light_reading = light_time.get('light_reading')
+
+        light_reading_or_batt = get_light_value_or_no_battery(
+            status_time, now, light_reading)
+
+        now_status['value'] = now
         now_status['cell'] = "D{}".format(str(i))
 
-        report_status['value'] = light_time.get('time')
+        report_status['value'] = status_time
         report_status['cell'] = "F{}".format(str(i))
 
-        current_light_reading['value'] = light_time.get('light_reading')
+        current_light_reading['value'] = light_reading_or_batt
         current_light_reading['cell'] = "H{}".format(str(i))
 
         update_sheet_status(
@@ -279,16 +294,38 @@ def report_light_readings():
             current_light_reading=current_light_reading,
         )
         i += 1
+        time.sleep(math.floor(100 / 24))
     print("finished running report_light_readings")
+
+
+def get_light_value_or_no_battery(time, now, value):
+    """For light threshold readings, put value or check battery."""
+    time_diff = round(get_time_diff(time, now))
+    if time_diff > 32:
+        return "CHECK BATTERY"
+    return value
 
 
 def read_write(switch="read"):
     """Switch between read thresholds or write new thresholds."""
+    get_device_ids()
     if switch is "read":
+        report_light_threshold_values()
+        report_light_readings()
+    elif switch is "thresholds":
         report_light_threshold_values()
     elif switch is "write":
         update_device_light_thresholds()
-
+        update_device_light_thresholds()
+    elif switch is "light":
+        report_light_readings()
+    elif switch is "do all the things":
+        report_light_threshold_values()
+        report_light_readings()
+        update_device_light_thresholds()
+        update_device_light_thresholds()
+    else:
+        print("You didn't select a valid switch...")
 
 if __name__ == '__main__':
     read_write("read")
