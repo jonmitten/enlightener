@@ -7,12 +7,14 @@ Manage connections to external API.
 import math
 import requests
 import time
+import ipdb
 
 from requests.auth import HTTPBasicAuth
 from settings import (USERNAME,
                       PASSWORD,
                       BASE_URL,
-                      RESOURCES
+                      RESOURCES,
+                      JSON_401
                       )
 
 basic_credentials = HTTPBasicAuth(USERNAME, PASSWORD)
@@ -84,10 +86,14 @@ def get_config_for_device(device_id):
     """
     auth = basic_credentials
     url = build_device_config_url(device_id=device_id)
+    print("url: {}".format(url))
     r = requests.get(url, auth=auth)
-    json_r = r.json()
-
-    return json_r
+    print("r: {}".format(r))
+    print("r status: {}".format(r.status_code))
+    if r.status_code is 200:
+        json_r = r.json()
+        return json_r
+    return 0
 
 
 def get_status_for_device(device_id):
@@ -101,9 +107,10 @@ def get_status_for_device(device_id):
     auth = basic_credentials
     url = build_device_status_url(device_id=device_id)
     r = requests.get(url, auth=auth)
-    json_r = r.json()
-
-    return json_r
+    if r.status_code is 200:
+        json_r = r.json()
+        return json_r
+    return 0
 
 
 def update_light_value(device_id, threshold):

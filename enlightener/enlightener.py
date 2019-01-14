@@ -7,6 +7,7 @@ import datetime
 import logging
 import math
 import time
+import types
 
 from connections import (get_config_for_device,
                          get_status_for_device,
@@ -44,13 +45,20 @@ def compile_light_time(device_id):
     """Process time and light."""
     config = get_config_for_device(device_id)
     status = get_status_for_device(device_id)
-
-    _now = now()
-    timestamp = get_timestamp(status)
-    light = get_light_threshold(config)
-    time_diff = round(get_time_diff(timestamp, _now))
-    analysis = analyze_time_diff(time_diff, device_id)
-    light_reading = get_current_light_reading(status)
+    if config and status:
+        _now = now()
+        timestamp = get_timestamp(status)
+        light = get_light_threshold(config)
+        time_diff = round(get_time_diff(timestamp, _now))
+        analysis = analyze_time_diff(time_diff, device_id)
+        light_reading = get_current_light_reading(status)
+    else:
+        _now = now()
+        timestamp = 'I got a 401 or some other error'
+        light = 'I got a 401 or some other error'
+        time_diff = 'I got a 401 or some other error'
+        analysis = 'I got a 401 or some other error'
+        light_reading = 'I got a 401 or some other error'
 
     # print("time: {}, light:{}, 'time_diff': {}, 'analysis': {}".format(
     #     timestamp,
@@ -84,9 +92,13 @@ def get_device_ids():
 def get_pretty_time(minutes):
     """Return a pretty time."""
     sec = datetime.timedelta(seconds=int(minutes * 60))
-    d = datetime.datetime(1, 1, 1) + sec
+    try:
+        d = datetime.datetime(1, 1, 1) + sec
+        return ("%d:%d:%d" % (d.day - 1, d.hour, d.minute))
+    except:
+        d = "Error"
+        return ("{} from get pretty time".format(d))
 
-    return ("%d:%d:%d" % (d.day - 1, d.hour, d.minute))
 
 
 def update_device_light_thresholds(test=False):
@@ -219,31 +231,16 @@ def report_light_threshold_values(init_data=""):
         time_diff = 0
         config = get_config_for_device(device_id)
         status = get_status_for_device(device_id)
-        _now = now()
-        timestamp = get_timestamp(status)
-        light_threshold = get_light_threshold(config)
-        light_threshold_status['value'] = light_threshold
-        # light_threshold_status['cell'] = "C{}".format(str(i))
-        light_threshold_status['cell'] = light_threshold_status_cell(i)
-
-        now_status['value'] = _now
-        now_status['cell'] = time_checked_cell(i)
-
-        report_status['value'] = timestamp
-        report_status['cell'] = report_status_cell(i)
-
-        time_diff = round(get_time_diff(timestamp, _now))
-        if time_diff > 32:
-            check_battery = True
+        if config and status:
+            print("got config and status")
+            s = update_unit_status(status, config, time_diff, i)
         else:
-            check_battery = False
-
-        pretty_time = "CHECK BATTERY" if check_battery else get_pretty_time(
-            time_diff)
-
-        diff_status['value'] = "{}".format(pretty_time)
-        diff_status['cell'] = time_since_last_report_cell(i)
-
+            print("didn't get config and status")
+            s = update_unit_status_failure(i)
+        light_threshold_status = s.light_threshold_status
+        now_status = s.now_status
+        report_status = s.report_status
+        diff_status = s.diff_status
         update_sheet_status(
             light_threshold_status=light_threshold_status,
             now_status=now_status,
@@ -253,6 +250,64 @@ def report_light_threshold_values(init_data=""):
         time.sleep(math.floor(100 / 24))
         i += 1
     print("Finished running report of threshold values.")
+
+
+def update_unit_status_failure(iterator):
+    """Fill in values with error message to push to spreadsheet."""
+    s = types.SimpleNamespace()
+    s.light_threshold_status = {}
+    s.now_status = {}
+    s.report_status = {}
+    s.diff_status = {}
+    alert = "I got a 401"
+    s.light_threshold_status['value'] = alert
+    s.light_threshold_status['cell'] = light_threshold_status_cell(iterator)
+    s.now_status['value'] = alert
+    s.now_status['cell'] = time_checked_cell(iterator)
+    s.report_status['value'] = alert
+    s.report_status['cell'] = report_status_cell(iterator)
+    s.diff_status['value'] = alert
+    s.diff_status['cell'] = time_since_last_report_cell(iterator)
+    return s
+
+
+def update_unit_status(status, config, time_diff, iterator):
+    """Combine values with cell positions in a dictionary."""
+    s = types.SimpleNamespace()
+    s.light_threshold_status = {}
+    s.now_status = {}
+    s.report_status = {}
+    s.diff_status = {}
+    s._now = now()
+    s.timestamp = get_timestamp(status)
+    s.light_threshold = get_light_threshold(config)
+    s.light_threshold_status['value'] = s.light_threshold
+    # light_threshold_status['cell'] = "C{}".format(str(i))
+    s.light_threshold_status['cell'] = light_threshold_status_cell(iterator)
+
+    s.now_status['value'] = s._now
+    s.now_status['cell'] = time_checked_cell(iterator)
+
+    s.report_status['value'] = s.timestamp
+    s.report_status['cell'] = report_status_cell(iterator)
+
+    try:
+        s.time_diff = round(get_time_diff(s.timestamp, s._now))
+    except TypeError:
+        s.time_diff = -1
+
+    if s.time_diff > 32:
+        check_battery = True
+    else:
+        check_battery = False
+    s.check_battery = check_battery
+    s.pretty_time = "CHECK BATTERY" if check_battery else get_pretty_time(
+        s.time_diff)
+
+    s.diff_status['value'] = "{}".format(s.pretty_time)
+    s.diff_status['cell'] = time_since_last_report_cell(iterator)
+
+    return s
 
 
 def report_light_readings():
@@ -328,5 +383,5 @@ def read_write(switch="read"):
         print("You didn't select a valid switch...")
 
 if __name__ == '__main__':
-    read_write("read")
+    read_write("thresholds")  # change this line to perform read_write tasks
     pass

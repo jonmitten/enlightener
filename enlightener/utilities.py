@@ -43,12 +43,16 @@ def chop_microseconds(delta):
 def get_time_diff(timestamp, now):
     """Get time delta between two times."""
     now = datetime.datetime.strptime(str(now), '%Y-%m-%d %H:%M:%S')
-    status_time = datetime.datetime.strptime(
-        timestamp, '%Y-%m-%d %H:%M:%S')
-    minute = datetime.timedelta(seconds=60)
-    time_diff = (now - status_time) / minute
-
-    return round(time_diff)
+    try:
+        status_time = datetime.datetime.strptime(
+            timestamp, '%Y-%m-%d %H:%M:%S')
+        minute = datetime.timedelta(seconds=60)
+        time_diff = (now - status_time) / minute
+        return round(time_diff)
+    except ValueError:
+        status_time = 'value error for status_time'
+        time_diff = status_time
+        return time_diff
 
 
 def analyze_time_diff(diff, device_id):
