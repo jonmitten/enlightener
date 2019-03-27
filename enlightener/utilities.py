@@ -61,3 +61,17 @@ def analyze_time_diff(diff, device_id):
         return "{} last reported {}".format(device_id, 'moments ago')
     return "{} last reported {} minutes ago".format(device_id, diff)
 
+
+def get_active_units(json):
+    """ID and return only active unit IDs."""
+    units = []
+    for unit in json:
+        if unit['deactivated'] is None and unit['sensor_device_id'].startswith('99000512'):
+            print(unit['sensor_device_id'])
+            units.append({
+                'unit_id': unit['sensor_device_id'],
+                'owner': unit['owner_id']['owner_name'],
+                'activated': unit['activated'],
+                'evo_type': unit['shipper_box_model_type']
+            })
+    return units

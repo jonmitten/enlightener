@@ -12,7 +12,8 @@ import types
 from connections import (get_config_for_device,
                          get_status_for_device,
                          locate_now,
-                         update_light_value)
+                         update_light_value,
+                         get_production_pt_units)
 from google_sheets import (input_from_sheets,
                            light_threshold_status_cell,
                            time_checked_cell,
@@ -98,7 +99,6 @@ def get_pretty_time(minutes):
     except:
         d = "Error"
         return ("{} from get pretty time".format(d))
-
 
 
 def update_device_light_thresholds(test=False):
@@ -361,27 +361,77 @@ def get_light_value_or_no_battery(time, now, value):
     return value
 
 
+def evois_threshold_check():
+    """Enlightened evoIS threshold check."""
+    production_units = get_production_pt_units()
+    i = ROW_ITER_START
+    pt_unit = {}
+    owner = {}
+    activated = {}
+    evo_type = {}
+    sheet_name = 'evois_device_threshold_check'
+    for row in production_units:
+        print("row: {}".format(row))
+        # time.sleep(5)
+        # unique columns to Production checks:
+        pt_unit['value'] = row['unit_id']
+        pt_unit['cell'] = "A{}".format(str(i))
+        print(pt_unit)
+        # time.sleep(5)
+        owner['value'] = row['owner']
+        owner['cell'] = "I{}".format(str(i))
+        print(owner)
+        # time.sleep(5)
+        activated['value'] = row['activated']
+        activated['cell'] = "J{}".format(str(i))
+        print(activated)
+        # time.sleep(5)
+        evo_type['value'] = row['evo_type']
+        evo_type['cell'] = "K{}".format(str(i))
+        print(evo_type)
+        # time.sleep(5)
+        # and their respective cells:
+        print("owner: {}, activated: {}, evo_type: {}, pt_unit: {}".format(
+            owner, activated, evo_type, pt_unit))
+        update_sheet_status(
+            pt_unit=pt_unit,
+            owner=owner,
+            activated=activated,
+            evo_type=evo_type,
+            sheet=sheet_name,
+        )
+        i += 1
+
+
 def read_write(switch="read"):
     """Switch between read thresholds or write new thresholds."""
-    get_device_ids()
     if switch is "read":
+        get_device_ids()
         report_light_threshold_values()
         report_light_readings()
     elif switch is "thresholds":
+        get_device_ids()
         report_light_threshold_values()
     elif switch is "write":
+        get_device_ids()
         update_device_light_thresholds()
         update_device_light_thresholds()
     elif switch is "light":
+        get_device_ids()
         report_light_readings()
-    elif switch is "do all the things":
+    elif switch is "all":
+        get_device_ids()
         report_light_threshold_values()
         report_light_readings()
         update_device_light_thresholds()
         update_device_light_thresholds()
+    elif switch is "evois":
+        print('Checking evoIS thresholds')
+        evois_threshold_check()
+        report_light_threshold_values()
     else:
         print("You didn't select a valid switch...")
 
 if __name__ == '__main__':
-    read_write("thresholds")  # change this line to perform read_write tasks
+    read_write("read")  # change this line to perform read_write tasks
     pass

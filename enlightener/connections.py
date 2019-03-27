@@ -14,14 +14,21 @@ from settings import (USERNAME,
                       PASSWORD,
                       BASE_URL,
                       RESOURCES,
-                      JSON_401
+                      JSON_401,
+                      EVOIS_ADMIN,
+                      EVOIS_PW,
+                      EVOIS_BASE_URL,
                       )
 
-basic_credentials = HTTPBasicAuth(USERNAME, PASSWORD)
+from utilities import get_active_units
+
+findum_credentials = HTTPBasicAuth(USERNAME, PASSWORD)
+evois_credentials = HTTPBasicAuth(EVOIS_ADMIN, EVOIS_PW)
 device_list = RESOURCES['devicelist']
 rsrc_config = RESOURCES['getconfig']
 rsrc_status = RESOURCES['getstatus']
 rsrc_light_set = RESOURCES['putlight']
+rsrc_evois_evos = RESOURCES['evois_device_list']
 
 
 def build_device_status_url(device_id):
@@ -57,9 +64,22 @@ def build_device_list_url(**kwargs):
     return '{}/{}'.format(BASE_URL, device_list['resource_url'])
 
 
+def build_evois_evos_url():
+    """
+    Build the evo device query.
+
+    Returns string URL.
+    """
+    url = rsrc_evois_evos['resource_url']
+    tpl_params = (EVOIS_BASE_URL, url)
+    device_query_url = '{}/{}'.format(*tpl_params)
+
+    return device_query_url
+
+
 def connect_to_api(authenticate=False, options=False):
     """Simple Connect script to ensure API is responsive."""
-    auth = basic_credentials if authenticate else ''
+    auth = findum_credentials if authenticate else ''
     url = build_device_list_url()
     r = requests.get(url, auth=auth)
 
@@ -69,7 +89,7 @@ def connect_to_api(authenticate=False, options=False):
 def get_device_list(device_list=None, **kwargs):
     """Get all devices from API."""
     if device_list is None:
-        auth = basic_credentials
+        auth = findum_credentials
         url = build_device_list_url()
         r = requests.get(url, auth=auth)
 
@@ -84,7 +104,7 @@ def get_config_for_device(device_id):
 
     returns JSON of request
     """
-    auth = basic_credentials
+    auth = findum_credentials
     url = build_device_config_url(device_id=device_id)
     print("url: {}".format(url))
     r = requests.get(url, auth=auth)
@@ -104,7 +124,7 @@ def get_status_for_device(device_id):
 
     Returns JSON of request.
     """
-    auth = basic_credentials
+    auth = findum_credentials
     url = build_device_status_url(device_id=device_id)
     r = requests.get(url, auth=auth)
     if r.status_code is 200:
@@ -119,7 +139,7 @@ def update_light_value(device_id, threshold):
     params = rsrc_light_set['query_string_parameters']
     required = params['required']
     data = {required[0]: device_id, required[1]: threshold}
-    auth = basic_credentials
+    auth = findum_credentials
 
     uri = '{}/{}'.format(BASE_URL, url)
 
@@ -136,6 +156,26 @@ def locate_now(device_id):
     print("locating {}".format(device_id))
     url = "https://restapi.sendum.com/locatenow?deviceidentifier={}".format(
         device_id)
-    r = requests.post(url, auth=basic_credentials)
+    r = requests.post(url, auth=findum_credentials)
     print("find now for {} :::: status {}\n\n\n".format(
         device_id, r.status_code))
+
+
+def get_production_pt_units():
+    """
+    Get the JSON response from the Django REST Framework.
+
+    Production DB: evoIS.savsu.com.
+    Returns JSON of complete evo list.
+
+    Filters by active evos.
+    """
+    auth = evois_credentials
+    url = build_evois_evos_url()
+    r = requests.get(url, auth=auth)
+    if r.status_code is 200:
+        json_r = r.json()
+        active_units = get_active_units(json_r)
+        # print(active_units)
+        return active_units
+    return 0

@@ -3,6 +3,8 @@ Google Sheets Python API helper file.
 
 Sets up access to CONSTs and vars.
 """
+import time
+
 from pprint import pprint
 from settings import SPREADSHEET_ID, SHEET, RANGE_NAME
 
@@ -24,8 +26,10 @@ service = build('sheets', 'v4', http=creds.authorize(Http()))
 
 def hello_sheets():
     """Prove Sheets API connectivitiy."""
-    results = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,
-                                                  range=RANGE_NAME).execute()
+    hello_range_name = 'hello_sheet!A2:B1000'
+    results = service.spreadsheets().values().get(
+        spreadsheetId=SPREADSHEET_ID,
+        range=hello_range_name).execute()
 
     values = results.get('values', [])
     if not values:
@@ -93,18 +97,25 @@ def decrease_cell_by_one(cell):
 def update_sheet_status(**kwargs):
     """Bulk update statuses."""
     print("update_sheet_status kwargs: {}".format(kwargs))
+    if 'sheet' in kwargs:
+        sheet = kwargs.pop('sheet')
+        print("your sheet is: {}".format(sheet))
+        print("kwargs items: {}".format(kwargs.items()))
+        for k, v in kwargs.items():
+            print('k : {}, v: {}, sheet: {}'.format(k, v, sheet))
+            write_to_cell(v.get('value'), v.get('cell'), sheet)
+    else:
+        for k, v in kwargs.items():
+            print('k: {}, v: {}'.format(k, v))
+            write_to_cell(v.get('value'), v.get('cell'))
 
-    for k, v in kwargs.items():
-        print('k: {}, v: {}'.format(k, v))
-        write_to_cell(v.get('value'), v.get('cell'))
 
-
-def write_to_cell(data="Hello from Python!", cell="B6"):
+def write_to_cell(data="Hello from Python!", cell="B6", sheet=SHEET):
     """Write a value to a specific cell using A1 notation."""
     # How the input data should be interpreted.
     value_input_option = 'USER_ENTERED'  # TODO: Update placeholder value.
 
-    range_ = "{}!{}".format(SHEET, cell)
+    range_ = "{}!{}".format(sheet, cell)
     value_range_body = {
         "range": range_,
         "values": [
