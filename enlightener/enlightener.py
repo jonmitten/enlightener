@@ -437,5 +437,5 @@ def read_write(switch="read"):
         print("You didn't select a valid switch...")
 
 if __name__ == '__main__':
-    read_write("all")  # change this line to perform read_write tasks
+    read_write("read")  # change this line to perform read_write tasks
     pass
