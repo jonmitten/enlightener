@@ -247,6 +247,10 @@ def report_light_threshold_values(init_data=""):
             report_status=report_status,
             diff_status=diff_status
         )
+        if len(data) < 6:
+            print("sleeping for 10 to avoid too quick a response")
+            time.sleep(10)
+
         time.sleep(math.floor(100 / 24))
         i += 1
     print("Finished running report of threshold values.")
@@ -433,5 +437,5 @@ def read_write(switch="read"):
         print("You didn't select a valid switch...")
 
 if __name__ == '__main__':
-    read_write("read")  # change this line to perform read_write tasks
+    read_write("all")  # change this line to perform read_write tasks
     pass
